@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cornerstone CPA - Pricing Calculator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:   #003A70;
+      --slate:  #8E9FBC;
+      --dark:   #041E42;
+      --white:  #ffffff;
+      --light:  #f4f6f9;
+      --border: #d8dfe9;
+      --text:   #1a2a3a;
+    }
+
+    body {
+      font-family: 'Barlow', sans-serif;
+      background: transparent;
+      color: var(--text);
+    }
+
+    .widget {
+      max-width: 680px;
+      margin: 0 auto;
+      background: var(--white);
+      border-radius: 12px;
+      box-shadow: 0 4px 32px rgba(0,58,112,0.13);
+      overflow: hidden;
+    }
+
+    /* Header */
+    .widget-header {
+      background: var(--navy);
+      padding: 12px 12px 0;
+    }
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 4px;
+    }
+    .tab {
+      flex: 1;
+      padding: 10px 8px;
+      background: rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.7);
+      border: none;
+      border-radius: 6px 6px 0 0;
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.18s, color 0.18s;
+    }
+    .tab:hover { background: rgba(255,255,255,0.2); color: var(--white); }
+    .tab.active { background: var(--white); color: var(--navy); }
+
+    /* Body */
+    .widget-body { padding: 28px 32px; }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* Form */
+    .field { margin-bottom: 18px; }
+    .field label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--navy);
+      margin-bottom: 6px;
+    }
+    .field select,
+    .field input[type="number"],
+    .field input[type="text"] {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      color: var(--text);
+      background: var(--light);
+      outline: none;
+      transition: border-color 0.15s;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    .field select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23003A70' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 38px;
+    }
+    .field select:focus,
+    .field input[type="number"]:focus,
+    .field input[type="text"]:focus {
+      border-color: var(--navy);
+      background: #fff;
+    }
+    .field input[type="number"]::-webkit-inner-spin-button { opacity: 0.5; }
+
+    .hint {
+      font-size: 0.74rem;
+      color: var(--slate);
+      margin-top: 4px;
+    }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    /* Result */
+    .result-box {
+      margin-top: 24px;
+      background: var(--navy);
+      border-radius: 10px;
+      padding: 22px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .result-label {
+      color: rgba(255,255,255,0.75);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .result-amount {
+      color: var(--white);
+      font-size: 2.1rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+    .result-amount span {
+      font-size: 1.1rem;
+      font-weight: 600;
+      opacity: 0.7;
+      margin-left: 3px;
+    }
+
+    /* Breakdown */
+    .breakdown {
+      margin-top: 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 16px;
+      font-size: 0.87rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .breakdown-row:last-child { border-bottom: none; }
+    .breakdown-row .bd-label { color: #4a5568; font-weight: 500; }
+    .breakdown-row .bd-value { color: var(--navy); font-weight: 700; }
+    .breakdown-row.zero .bd-value { color: var(--slate); }
+    .breakdown-row.total-row {
+      background: var(--light);
+    }
+    .breakdown-row.total-row .bd-label { font-weight: 700; color: var(--navy); }
+
+    /* Footer */
+    .widget-footer {
+      padding: 14px 32px;
+      background: var(--light);
+      border-top: 1px solid var(--border);
+      font-size: 0.74rem;
+      color: var(--slate);
+      text-align: center;
+    }
+    .widget-footer a { color: var(--navy); text-decoration: none; font-weight: 600; }
+
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 20px 0;
+    }
+
+    @media (max-width: 480px) {
+      .widget-body { padding: 20px 18px; }
+      .widget-header { padding: 20px 18px 0; }
+      .two-col { grid-template-columns: 1fr; }
+      .result-amount { font-size: 1.7rem; }
+      .tab { font-size: 0.7rem; padding: 8px 4px; }
+    }
+  </style>
+</head>
+<body>
+<div class="widget">
+  <div class="widget-header">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('business', this)">Business</button>
+      <button class="tab" onclick="switchTab('ltr', this)">Long-Term Rental</button>
+      <button class="tab" onclick="switchTab('str', this)">Short-Term Rental</button>
+    </div>
+  </div>
+
+  <div class="widget-body">
+
+    <!-- BUSINESS PANEL -->
+    <div id="panel-business" class="panel active">
+      <div class="two-col">
+        <div class="field">
+          <label>Accounting Basis</label>
+          <select id="bus-basis" onchange="calcBusiness()">
+            <option value="cash">Cash (Most Common)</option>
+            <option value="accrual">Accrual</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Turnaround Time</label>
+          <select id="bus-turnaround" onchange="calcBusiness()">
+            <option value="20">Standard - 20 Days</option>
+            <option value="10">Expedite - 10 Days (+20%)</option>
+            <option value="5">Rush - 5 Days (+35%)</option>
+          </select>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="field">
+          <label>Monthly Expenditures</label>
+          <select id="bus-expenditures" onchange="calcBusiness()"></select>
+          <div class="hint">Your average monthly business expenditures.</div>
+        </div>
+        <div class="field">
+          <label>Financial Accounts</label>
+          <select id="bus-accounts" onchange="calcBusiness()"></select>
+          <div class="hint" id="bus-accounts-hint">Bank, credit card, and loan accounts</div>
+        </div>
+      </div>
+
+      <div class="breakdown" id="bus-breakdown">
+        <div class="breakdown-row"><span class="bd-label">Base Fee (Cash)</span><span class="bd-value" id="bd-base">$450</span></div>
+        <div class="breakdown-row zero"><span class="bd-label">Expenditures Add-On</span><span class="bd-value" id="bd-exp">$0</span></div>
+        <div class="breakdown-row zero"><span class="bd-label">Accounts Add-On</span><span class="bd-value" id="bd-acct">$0</span></div>
+        <div class="breakdown-row zero"><span class="bd-label">Expedite Fee</span><span class="bd-value" id="bd-exp-fee">-</span></div>
+      </div>
+
+      <div class="result-box">
+        <div>
+          <div class="result-label">Estimated Monthly Fee</div>
+        </div>
+        <div class="result-amount" id="bus-total">$450<span>/mo</span></div>
+      </div>
+    </div>
+
+    <!-- LTR PANEL -->
+    <div id="panel-ltr" class="panel">
+      <div class="two-col">
+        <div class="field">
+          <label>Number of Properties</label>
+          <select id="ltr-props" onchange="ltrPropsChanged()"></select>
+          <div class="hint">Each long-term rental property: $70/month</div>
+        </div>
+        <div class="field">
+          <label>Financial Accounts</label>
+          <select id="ltr-accounts" onchange="calcLTR()"></select>
+          <div class="hint" id="ltr-accounts-hint">Bank, credit card, and loan accounts</div>
+        </div>
+      </div>
+
+      <div class="breakdown">
+        <div class="breakdown-row"><span class="bd-label">Properties</span><span class="bd-value" id="ltr-count">1</span></div>
+        <div class="breakdown-row"><span class="bd-label">Rate per Property</span><span class="bd-value">$70/mo</span></div>
+        <div class="breakdown-row zero"><span class="bd-label">Accounts Add-On</span><span class="bd-value" id="ltr-acct-val">$0</span></div>
+      </div>
+
+      <div class="result-box">
+        <div><div class="result-label">Estimated Monthly Fee</div></div>
+        <div class="result-amount" id="ltr-total">$70<span>/mo</span></div>
+      </div>
+    </div>
+
+    <!-- STR PANEL -->
+    <div id="panel-str" class="panel">
+      <div class="two-col">
+        <div class="field">
+          <label>Number of Properties</label>
+          <select id="str-props" onchange="strPropsChanged()"></select>
+          <div class="hint">Each short-term rental property: $155/month</div>
+        </div>
+        <div class="field">
+          <label>Financial Accounts</label>
+          <select id="str-accounts" onchange="calcSTR()"></select>
+          <div class="hint" id="str-accounts-hint">Bank, credit card, and loan accounts</div>
+        </div>
+      </div>
+
+      <div class="breakdown">
+        <div class="breakdown-row"><span class="bd-label">Properties</span><span class="bd-value" id="str-count">1</span></div>
+        <div class="breakdown-row"><span class="bd-label">Rate per Property</span><span class="bd-value">$155/mo</span></div>
+        <div class="breakdown-row zero"><span class="bd-label">Accounts Add-On</span><span class="bd-value" id="str-acct-val">$0</span></div>
+      </div>
+
+      <div class="result-box">
+        <div><div class="result-label">Estimated Monthly Fee</div></div>
+        <div class="result-amount" id="str-total">$155<span>/mo</span></div>
+      </div>
+    </div>
+
+  </div><!-- /widget-body -->
+
+</div>
+
+<script>
+  function fmt(n) {
+    return '$' + Math.round(n).toLocaleString('en-US');
+  }
+
+  function buildPropsDropdown(id) {
+    const sel = document.getElementById(id);
+    for (let i = 1; i <= 50; i++) {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = i + (i === 1 ? ' property' : ' properties');
+      if (i === 1) opt.selected = true;
+      sel.appendChild(opt);
+    }
+  }
+
+  function buildAccountsDropdown(id, defaultVal, max) {
+    const sel = document.getElementById(id);
+    const top = max || 15;
+    for (let i = 1; i <= top; i++) {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = i + (i === 1 ? ' account' : ' accounts');
+      if (i === defaultVal) opt.selected = true;
+      sel.appendChild(opt);
+    }
+  }
+
+  // Grow the LTR/STR accounts list so it always covers the included count
+  // (2 per property) plus room for extras, preserving the current selection.
+  function scaleAccounts(selId, props) {
+    const sel = document.getElementById(selId);
+    const max = Math.max(15, props * 2 + 10);
+    if (sel.options.length === max) return;
+    const prev = parseInt(sel.value) || 2;
+    sel.innerHTML = '';
+    for (let i = 1; i <= max; i++) {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = i + (i === 1 ? ' account' : ' accounts');
+      sel.appendChild(opt);
+    }
+    sel.value = Math.min(prev, max);
+  }
+
+  function ltrPropsChanged() {
+    scaleAccounts('ltr-accounts', parseInt(document.getElementById('ltr-props').value) || 1);
+    calcLTR();
+  }
+
+  function strPropsChanged() {
+    scaleAccounts('str-accounts', parseInt(document.getElementById('str-props').value) || 1);
+    calcSTR();
+  }
+
+  const BUSINESS_BANDS = [
+    { label: 'Under $20,000',       addon: 0,   included: 2 },
+    { label: '$20,000 to $29,999',  addon: 25,  included: 3 },
+    { label: '$30,000 to $39,999',  addon: 60,  included: 4 },
+    { label: '$40,000 to $49,999',  addon: 105, included: 5 },
+    { label: '$50,000 to $59,999',  addon: 160, included: 6 },
+    { label: '$60,000 to $69,999',  addon: 225, included: 7 },
+    { label: '$70,000 to $79,999',  addon: 300, included: 8 },
+    { label: '$80,000 to $89,999',  addon: 385, included: 9 },
+    { label: '$90,000 to $99,999',  addon: 480, included: 10 },
+    { label: '$100,000+',           addon: 585, included: 10 }
+  ];
+
+  function buildExpDropdown() {
+    const sel = document.getElementById('bus-expenditures');
+    BUSINESS_BANDS.forEach((b, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = b.label;
+      if (i === 0) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+
+  function getBand() {
+    const idx = parseInt(document.getElementById('bus-expenditures').value) || 0;
+    return BUSINESS_BANDS[idx] || BUSINESS_BANDS[0];
+  }
+
+  function switchTab(id, btn) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('panel-' + id).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  function accountsAddon(accts, included) {
+    // LTR/STR: 2 accounts included per property; +$20 per account above that
+    const inc = included || 2;
+    if (accts <= inc) return 0;
+    return (accts - inc) * 20;
+  }
+
+  function businessAccountsAddon(accts, included) {
+    // Business: included accounts scale with band; +$20 per account above included
+    if (accts <= included) return 0;
+    return (accts - included) * 20;
+  }
+
+  function calcBusiness() {
+    const basis      = document.getElementById('bus-basis').value;
+    const turnaround = parseInt(document.getElementById('bus-turnaround').value);
+    const band       = getBand();
+    const accts      = parseInt(document.getElementById('bus-accounts').value) || 1;
+
+    const baseFee    = basis === 'cash' ? 450 : 575;
+    const expAddon   = band.addon;
+    const acctAddon  = businessAccountsAddon(accts, band.included);
+    const subtotal   = baseFee + expAddon + acctAddon;
+    const expRate    = turnaround === 5 ? 0.35 : turnaround === 10 ? 0.20 : 0;
+    const expFee     = Math.round(subtotal * expRate / 5) * 5; // round to nearest $5
+    const total      = subtotal + expFee;
+
+    // Base fee row
+    document.getElementById('bd-base').closest('.breakdown-row').querySelector('.bd-label').textContent =
+      'Base Fee (' + (basis === 'cash' ? 'Cash' : 'Accrual') + ')';
+    document.getElementById('bd-base').textContent = fmt(baseFee);
+
+    // Expenditures add-on row
+    const expRow = document.getElementById('bd-exp').closest('.breakdown-row');
+    document.getElementById('bd-exp').textContent = fmt(expAddon);
+    expRow.classList.toggle('zero', expAddon === 0);
+
+    // Accounts add-on row (label shows how many are included)
+    const acctRow = document.getElementById('bd-acct').closest('.breakdown-row');
+    acctRow.querySelector('.bd-label').textContent =
+      'Accounts Add-On (' + band.included + ' included)';
+    document.getElementById('bd-acct').textContent = fmt(acctAddon);
+    acctRow.classList.toggle('zero', acctAddon === 0);
+
+    // Dynamic hint under Financial Accounts
+    document.getElementById('bus-accounts-hint').textContent =
+      'First ' + band.included + ' accounts included; $20/mo each after';
+
+    // Expedite fee row
+    const feeRow = document.getElementById('bd-exp-fee').closest('.breakdown-row');
+    if (expFee > 0) {
+      const label = turnaround === 5 ? 'Rush Fee (+35%)' : 'Expedite Fee (+20%)';
+      feeRow.querySelector('.bd-label').textContent = label;
+      document.getElementById('bd-exp-fee').textContent = fmt(expFee);
+      feeRow.classList.remove('zero');
+    } else {
+      feeRow.querySelector('.bd-label').textContent = 'Expedite Fee';
+      document.getElementById('bd-exp-fee').textContent = '-';
+      feeRow.classList.add('zero');
+    }
+
+    document.getElementById('bus-total').innerHTML = fmt(total) + '<span>/mo</span>';
+  }
+
+  function calcLTR() {
+    const props     = parseInt(document.getElementById('ltr-props').value) || 1;
+    const accts     = parseInt(document.getElementById('ltr-accounts').value) || 1;
+    const included  = props * 2;
+    const acctAddon = accountsAddon(accts, included);
+    const total     = props * 70 + acctAddon;
+
+    document.getElementById('ltr-count').textContent = props;
+    const acctRow = document.getElementById('ltr-acct-val').closest('.breakdown-row');
+    acctRow.querySelector('.bd-label').textContent =
+      'Accounts Add-On (' + included + ' included)';
+    document.getElementById('ltr-acct-val').textContent = fmt(acctAddon);
+    acctRow.classList.toggle('zero', acctAddon === 0);
+    document.getElementById('ltr-accounts-hint').textContent =
+      '2 accounts included per property; $20/mo each after';
+
+    document.getElementById('ltr-total').innerHTML = fmt(total) + '<span>/mo</span>';
+  }
+
+  function calcSTR() {
+    const props     = parseInt(document.getElementById('str-props').value) || 1;
+    const accts     = parseInt(document.getElementById('str-accounts').value) || 1;
+    const included  = props * 2;
+    const acctAddon = accountsAddon(accts, included);
+    const total     = props * 155 + acctAddon;
+
+    document.getElementById('str-count').textContent = props;
+    const acctRow = document.getElementById('str-acct-val').closest('.breakdown-row');
+    acctRow.querySelector('.bd-label').textContent =
+      'Accounts Add-On (' + included + ' included)';
+    document.getElementById('str-acct-val').textContent = fmt(acctAddon);
+    acctRow.classList.toggle('zero', acctAddon === 0);
+    document.getElementById('str-accounts-hint').textContent =
+      '2 accounts included per property; $20/mo each after';
+
+    document.getElementById('str-total').innerHTML = fmt(total) + '<span>/mo</span>';
+  }
+
+  function reportHeight() {
+    window.parent.postMessage({ frameHeight: document.body.scrollHeight }, '*');
+  }
+  window.addEventListener('load', reportHeight);
+  window.addEventListener('resize', reportHeight);
+  document.addEventListener('change', reportHeight);
+
+  // Init
+  buildExpDropdown();
+  buildAccountsDropdown('bus-accounts', 2, 20);
+  buildPropsDropdown('ltr-props');
+  buildPropsDropdown('str-props');
+  buildAccountsDropdown('ltr-accounts', 2);
+  buildAccountsDropdown('str-accounts', 2);
+  calcBusiness();
+  calcLTR();
+  calcSTR();
+</script>
+</body>
+</html>
